@@ -36,7 +36,7 @@ def audit_file(path: Path, variant: str) -> list[str]:
             errors.append(f"{prefix}: termination={record.get('termination_reason')}")
         events = record.get("events", [])
         kinds = [e.get("kind") for e in events]
-        executed = [e.get("action") for e in events if e.get("kind") == "tool_execution" and e.get("status") == "SUCCESS"]
+        executed = [e.get("action") for e in events if e.get("kind") == "tool_execution" and e.get("status") in {"SUCCESS", "PASS"}]
         if executed != EXPECTED_ACTIONS:
             errors.append(f"{prefix}: executed actions={executed}")
         if any(e.get("kind") == "external_mutation" for e in events):
