@@ -6,7 +6,7 @@ from typing import Callable
 from .observer import ExternalObserver
 from .systems import DecisionProvider
 from .tools import TOOLS, ToolResult, WorkspaceTools
-from .trace import Trace, execute_action, record_external_observation
+from .trace import Trace, _json_safe, execute_action, record_external_observation
 
 OBJECTIVE = "Create artifact.txt as the canonical transformation of source.txt and independently verify it."
 
@@ -51,7 +51,9 @@ class Runner:
         history: list[dict] = []
         trace.event(
             "run_initialized",
-            initial_workspace_state=self.observer.observe(workspace, "INITIAL", ToolResult("SUCCESS")).external_state,
+            initial_workspace_state=self.observer.observe(
+                workspace, "INITIAL", ToolResult("SUCCESS")
+            ).external_state,
             authorized_actions=list(TOOLS),
             decision_provider=type(self.provider).__name__,
             observer=type(self.observer).__name__,
@@ -63,9 +65,13 @@ class Runner:
                 trace.event("plan_created", source="deterministic", actions=actions)
             else:
                 actions = self.provider.plan(OBJECTIVE, TOOLS)
-                trace.event("plan_created", source="one_shot_decision_provider", actions=actions)
+                trace.event(
+                    "plan_created", source="one_shot_decision_provider", actions=actions
+                )
             for action in actions:
-                result, observation = self._act_and_observe(action, workspace, tools, trace, mutation_hook)
+                result, observation = self._act_and_observe(
+                    action, workspace, tools, trace, mutation_hook
+                )
                 history.append(observation)
                 if result.status in {"ERROR", "MALFORMED"}:
                     return trace.finish(workspace, "controlled_tool_failure")
@@ -82,7 +88,7 @@ class Runner:
                 action=decision.action,
                 intent=decision.intent,
                 reason=decision.reason,
-                observation=observation,
+                observation=_json_safe(observation),
             )
             if decision.action is None:
                 return trace.finish(workspace, "adaptive_termination")

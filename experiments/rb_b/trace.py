@@ -46,27 +46,51 @@ class Trace:
         }
 
 
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return {"encoding": "hex", "value": value.hex()}
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return value
+
+
 def execute_action(tools: WorkspaceTools, action: str, trace: Trace) -> ToolResult:
     trace.event("action_proposed", action=action)
     authorized = action in TOOLS
     trace.event("authorization", action=action, authorized=authorized)
     if not authorized:
         result = ToolResult("ERROR", {}, "GOVERNANCE")
-        trace.event("tool_execution", action=action, status=result.status,
-                    error_type=result.error_type,
-                    workspace_state=snapshot_workspace(tools.workspace))
+        trace.event(
+            "tool_execution",
+            action=action,
+            status=result.status,
+            error_type=result.error_type,
+            workspace_state=snapshot_workspace(tools.workspace),
+        )
         return result
     try:
         result = tools.call(action)
-        trace.event("tool_execution", action=action, status=result.status,
-                    data=result.data, error_type=result.error_type,
-                    workspace_state=snapshot_workspace(tools.workspace))
+        trace.event(
+            "tool_execution",
+            action=action,
+            status=result.status,
+            data=_json_safe(result.data),
+            error_type=result.error_type,
+            workspace_state=snapshot_workspace(tools.workspace),
+        )
         return result
     except ToolError as exc:
         result = ToolResult("ERROR", {}, exc.kind)
-        trace.event("tool_execution", action=action, status=result.status,
-                    error_type=result.error_type, message=str(exc),
-                    workspace_state=snapshot_workspace(tools.workspace))
+        trace.event(
+            "tool_execution",
+            action=action,
+            status=result.status,
+            error_type=result.error_type,
+            message=str(exc),
+            workspace_state=snapshot_workspace(tools.workspace),
+        )
         return result
 
 
@@ -75,7 +99,7 @@ def record_external_observation(trace: Trace, observation: ExternalObservation) 
         "observation",
         action=observation.action,
         tool_status=observation.tool_status,
-        tool_claim=observation.tool_claim,
+        tool_claim=_json_safe(observation.tool_claim),
         external_state=observation.external_state,
         artifact_exists=observation.artifact_exists,
         artifact_hash=observation.artifact_hash,
