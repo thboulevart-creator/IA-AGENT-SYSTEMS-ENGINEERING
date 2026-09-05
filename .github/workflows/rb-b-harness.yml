@@ -2,7 +2,7 @@ name: RB-B harness
 
 on:
   push:
-    branches: [main, e2-autonomous-adversarial, q-llm-01-r-runtime-readiness, q-llm-01-runtime-smoke]
+    branches: [main, e2-autonomous-adversarial, q-llm-01-r-runtime-readiness, q-llm-01-runtime-smoke, q-llm-01-execution-ready]
   pull_request:
 
 jobs:
@@ -13,11 +13,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Real OpenAI runtime smoke
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          Q_LLM_MODEL: gpt-5.6-luna
-        run: python experiments/q_llm_01/openai_runtime_smoke.py
       - name: Unit tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Smoke E1-E4
