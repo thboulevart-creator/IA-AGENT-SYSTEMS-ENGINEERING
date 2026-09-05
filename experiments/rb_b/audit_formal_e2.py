@@ -57,6 +57,13 @@ def _provider_leakage_check() -> str | None:
     return None
 
 
+def _final_state_artifact_hash(record: dict[str, Any]) -> str | None:
+    artifact = record.get("final_state", {}).get("artifact")
+    if isinstance(artifact, dict):
+        return artifact.get("sha256")
+    return None
+
+
 def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str) -> list[str]:
     failures: list[str] = []
     if normal.get("condition") != "normal" or perturbed.get("condition") != "perturbed":
@@ -118,12 +125,18 @@ def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str)
                 failures.append("repair without causal observation")
         if perturbed.get("verification", {}).get("status") != "PASS":
             failures.append("final oracle contradiction")
+        if _final_state_artifact_hash(perturbed) != expected_hash:
+            failures.append("final oracle contradiction")
     else:
         if divergence is not None:
             failures.append("unexplained first divergence")
         if perturbed.get("verification", {}).get("status") != "FAIL":
             failures.append("final oracle contradiction")
+        if _final_state_artifact_hash(perturbed) == expected_hash:
+            failures.append("final oracle contradiction")
 
+    if normal.get("verification", {}).get("status") != "PASS" or _final_state_artifact_hash(normal) != expected_hash:
+        failures.append("final oracle contradiction")
     return failures
 
 
