@@ -31,16 +31,20 @@ class OpenAIResponsesClient(InferenceClient):
         api_key: str | None = None,
         model: str | None = None,
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+        client_revision: str | None = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.model = model or os.environ.get("Q_LLM_MODEL", DEFAULT_MODEL)
         self.timeout_seconds = timeout_seconds
+        self.client_revision = client_revision or os.environ.get("Q_LLM_CLIENT_REVISION")
         if not self._api_key:
             raise RuntimeError("OPENAI_API_KEY is required for real LLM inference")
         if self.timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
         if not self.model:
             raise ValueError("model must be non-empty")
+        if not self.client_revision:
+            raise RuntimeError("Q_LLM_CLIENT_REVISION must pin the runtime client revision")
 
     def runtime_configuration(self, request: LLMRequest) -> RuntimeConfiguration:
         """Expose the exact immutable runtime settings used to construct a request."""
@@ -55,7 +59,7 @@ class OpenAIResponsesClient(InferenceClient):
             structured_output_name=STRUCTURED_OUTPUT_NAME,
             structured_output_strict=True,
             structured_output_schema=_structured_schema(request),
-            client_revision=os.environ.get("Q_LLM_CLIENT_REVISION", "UNPINNED"),
+            client_revision=self.client_revision,
         )
 
     def infer(self, request: LLMRequest) -> LLMResponse:
