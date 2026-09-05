@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 from experiments.q_llm_01.fingerprint import (
     ExperimentConfiguration,
@@ -35,6 +36,7 @@ def make_config() -> ExperimentConfiguration:
             client_revision="commit-abc",
         ),
         protocol_hash="protocol-sha256-abc",
+        prompt_template_hash="prompt-sha256-abc",
         scenario_id="S0-001",
         seed=17,
         initial_state={"artifact": "valid", "counter": 0},
@@ -63,13 +65,23 @@ class FingerprintContractTests(unittest.TestCase):
 
     def test_authorized_difference_is_detected(self) -> None:
         left = make_config()
-        right = make_config()
-        right = ExperimentConfiguration(
-            **{**right.__dict__, "seed": 18}
-        )
+        right = replace(left, seed=18)
         same, differences = compare_configurations(left, right)
         self.assertFalse(same)
         self.assertEqual(differences, ("seed",))
+
+    def test_nested_configuration_cannot_be_mutated_after_construction(self) -> None:
+        original = {"artifact": {"status": "valid"}}
+        config = replace(make_config(), initial_state=original)
+        original["artifact"]["status"] = "tampered"
+        self.assertEqual(config.initial_state["artifact"]["status"], "valid")
+
+    def test_unpinned_client_revision_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            replace(
+                make_config(),
+                runtime=replace(make_config().runtime, client_revision="UNPINNED"),
+            )
 
     def test_record_contains_fingerprint_but_no_api_secret(self) -> None:
         record = configuration_record(make_config())
