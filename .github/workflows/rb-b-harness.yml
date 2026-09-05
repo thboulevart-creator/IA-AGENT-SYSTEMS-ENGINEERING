@@ -1,0 +1,29 @@
+name: RB-B harness
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Smoke E1-E4
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variant in S0 S1 S2; do
+            python -m experiments.rb_b.harness --experiment E1 --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
+            python -m experiments.rb_b.harness --experiment E2 --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
+            python -m experiments.rb_b.harness --experiment E3 --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
+            for failure in E4-A E4-B E4-C E4-D; do
+              python -m experiments.rb_b.harness --experiment "$failure" --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
+            done
+          done
