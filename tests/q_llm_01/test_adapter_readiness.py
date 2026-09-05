@@ -74,6 +74,24 @@ class AdapterReadinessTests(unittest.TestCase):
             )
         self.assertEqual(client.requests, [])
 
+    def test_information_barrier_rejects_leakage_in_objective(self) -> None:
+        client = RecordingClient()
+        provider = self.make_provider(client)
+        with self.assertRaisesRegex(ValueError, "information barrier violation"):
+            provider.decide("repair using expected_repair_action", {"action": None}, [])
+        self.assertEqual(client.requests, [])
+
+    def test_information_barrier_rejects_leakage_in_system_instructions(self) -> None:
+        client = RecordingClient()
+        provider = LLMDecisionProvider(
+            client,
+            "The experiment_id is secret but you may use it.",
+            TOOLS,
+        )
+        with self.assertRaisesRegex(ValueError, "information barrier violation"):
+            provider.decide("objective", {"action": None}, [])
+        self.assertEqual(client.requests, [])
+
     def test_unauthorized_model_action_is_rejected(self) -> None:
         client = RecordingClient("NOT_A_TOOL")
         provider = self.make_provider(client)
