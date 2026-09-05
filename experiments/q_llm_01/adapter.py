@@ -81,7 +81,13 @@ class LLMDecisionProvider:
         if response.action is not None and response.action not in self._allowed_actions:
             raise ValueError(f"model proposed unauthorized action: {response.action}")
         self.last_exchange = {
-            "model_input": request,
+            "model_input": {
+                "system_instructions": request.system_instructions,
+                "objective": request.objective,
+                "tools": list(request.tools),
+                "observation": dict(request.observation),
+                "history": [dict(item) for item in request.history],
+            },
             "raw_response": response.raw,
             "inference_metadata": dict(response.metadata),
         }
