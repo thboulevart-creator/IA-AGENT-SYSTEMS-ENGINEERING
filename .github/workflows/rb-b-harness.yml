@@ -27,6 +27,7 @@ jobs:
               python -m experiments.rb_b.harness --experiment "$failure" --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
             done
           done
+      # Formal E1 is the controlled baseline dataset: 20 runs per variant, traces retained and audited.
       - name: Formal E1 dataset
         run: python -m experiments.rb_b.harness --formal-e1 --output-dir /tmp/formal-e1
       - name: Formal E1 trace audit
