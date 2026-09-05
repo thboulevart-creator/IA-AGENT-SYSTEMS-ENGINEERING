@@ -15,6 +15,11 @@ def _events(record: dict[str, Any], kind: str) -> list[dict[str, Any]]:
     return [event for event in record.get("events", []) if event.get("kind") == kind]
 
 
+def _first_observation(record: dict[str, Any], action: str) -> dict[str, Any] | None:
+    matches = [event for event in _events(record, "observation") if event.get("action") == action]
+    return matches[0] if matches else None
+
+
 def _last_observation(record: dict[str, Any], action: str) -> dict[str, Any] | None:
     matches = [event for event in _events(record, "observation") if event.get("action") == action]
     return matches[-1] if matches else None
@@ -70,8 +75,8 @@ def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str)
     if any(normal.get(field) != perturbed.get(field) for field in pair_fields):
         failures.append("initial state mismatch")
 
-    normal_write = _last_observation(normal, "WRITE_ARTIFACT")
-    pert_write = _last_observation(perturbed, "WRITE_ARTIFACT")
+    normal_write = _first_observation(normal, "WRITE_ARTIFACT")
+    pert_write = _first_observation(perturbed, "WRITE_ARTIFACT")
     if not normal_write or not pert_write:
         failures.append("trace incomplete")
         return failures
@@ -92,8 +97,8 @@ def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str)
         if not write_exec or not write_obs or not (write_exec[0]["seq"] < mutation_seq < write_obs[0]["seq"]):
             failures.append("mutation placement invalid")
 
-    normal_check = _last_observation(normal, "CHECK_ARTIFACT")
-    pert_check = _last_observation(perturbed, "CHECK_ARTIFACT")
+    normal_check = _first_observation(normal, "CHECK_ARTIFACT")
+    pert_check = _first_observation(perturbed, "CHECK_ARTIFACT")
     if not normal_check or not pert_check:
         failures.append("trace incomplete")
     else:
@@ -117,9 +122,9 @@ def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str)
                 d for d in _events(perturbed, "decision")
                 if d.get("observation", {}).get("action") == "CHECK_ARTIFACT"
             ]
-            if not relevant or relevant[-1].get("observation", {}).get("tool_status") != "FAIL":
+            if not relevant or relevant[0].get("observation", {}).get("tool_status") != "FAIL":
                 failures.append("repair without causal observation")
-            if not any(d.get("action") == "REPAIR_ARTIFACT" for d in relevant):
+            if not relevant or relevant[0].get("action") != "REPAIR_ARTIFACT":
                 failures.append("repair without causal observation")
         if perturbed.get("verification", {}).get("status") != "PASS" or _final_state_artifact_hash(perturbed) != expected_hash:
             failures.append("final oracle contradiction")
