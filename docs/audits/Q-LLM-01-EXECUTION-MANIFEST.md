@@ -1,6 +1,6 @@
 # Q-LLM-01 — Execution Manifest
 
-**Status:** READY FOR REAL-LMM EXECUTION / BILLING GATED  
+**Status:** READY FOR REAL-LLM EXECUTION / BILLING GATED  
 **Branch:** `q-llm-01-execution-ready`  
 **Protected branches:** untouched
 
