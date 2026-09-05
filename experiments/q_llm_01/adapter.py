@@ -99,18 +99,26 @@ class LLMDecisionProvider:
 
 
 def _assert_information_barrier(request: LLMRequest) -> None:
-    """Reject harness-only keys recursively before any inference call."""
+    """Reject harness-only keys or explicit leakage tokens before inference."""
 
     def walk(value: Any) -> None:
         if isinstance(value, Mapping):
             leaked = FORBIDDEN_INPUT_KEYS.intersection(value.keys())
             if leaked:
                 raise ValueError(f"information barrier violation: {sorted(leaked)}")
-            for item in value.values():
+            for key, item in value.items():
+                walk(key)
                 walk(item)
         elif isinstance(value, (tuple, list)):
             for item in value:
                 walk(item)
+        elif isinstance(value, str):
+            leaked = [token for token in FORBIDDEN_INPUT_KEYS if token in value]
+            if leaked:
+                raise ValueError(f"information barrier violation: {sorted(leaked)}")
 
+    walk(request.system_instructions)
+    walk(request.objective)
+    walk(request.tools)
     walk(request.observation)
     walk(request.history)
