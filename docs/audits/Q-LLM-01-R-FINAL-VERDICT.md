@@ -20,7 +20,7 @@ Can the repository provide a vendor-neutral, auditable runtime boundary that can
 - CI job completed successfully.
 - Formal evidence artifacts were successfully uploaded.
 
-The CI log explicitly shows the six Q-LLM-01-R readiness tests executing and passing, followed by the existing 13 RB-B tests; the total was 19 tests with `OK`. citerun33974990582log
+The CI execution log records the six Q-LLM-01-R readiness tests executing successfully, followed by the existing 13 RB-B tests, for 19 total tests with `OK`.
 
 ## Readiness controls validated
 
@@ -39,7 +39,7 @@ The first execution attempt exposed a test-discoverability weakness: the new rea
 
 The tests were converted to `unittest` and `tests/q_llm_01/__init__.py` was added so CI discovery is explicit. A fresh PR run was then forced by closing/reopening the draft PR, and the corrected suite executed the six new readiness tests. All six passed.
 
-This is important: the earlier successful run was **not** accepted as readiness evidence. The corrected run at the final branch head is the evidence used for this verdict.
+The earlier successful run was **not** accepted as readiness evidence. The corrected run is the evidence used for this verdict.
 
 ## Scope boundary
 
