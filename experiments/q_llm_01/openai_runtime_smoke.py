@@ -19,17 +19,7 @@ def main() -> int:
 
     payload = {
         "model": MODEL,
-        "input": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": "Return exactly the word READY.",
-                    }
-                ],
-            }
-        ],
+        "input": "Return exactly the word READY.",
         "max_output_tokens": 16,
     }
     request = urllib.request.Request(
