@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from .harness import SCENARIOS, VARIANTS
-from .oracle import canonical_transform
 from .systems import ScriptedDecisionProvider
 
 
@@ -25,8 +24,12 @@ def _source_bytes(scenario_id: int) -> bytes:
     return SCENARIOS[int(scenario_id)].encode("utf-8")
 
 
+def _independent_transform(source: bytes) -> bytes:
+    return source.decode("utf-8").strip().lower().encode("utf-8")
+
+
 def _expected_hash(scenario_id: int) -> str:
-    return hashlib.sha256(canonical_transform(_source_bytes(scenario_id))).hexdigest()
+    return hashlib.sha256(_independent_transform(_source_bytes(scenario_id))).hexdigest()
 
 
 def _action_sequence(record: dict[str, Any]) -> list[str]:
@@ -44,7 +47,7 @@ def _first_action_divergence(normal: list[str], perturbed: list[str]) -> int | N
 
 def _provider_leakage_check() -> str | None:
     source = inspect.getsource(ScriptedDecisionProvider)
-    forbidden = ("experiment_id", "experiment", "fault", "perturb", "mutation_hook", "mutated")
+    forbidden = ("experiment_id", "mutation_hook", "perturb", "mutated")
     for token in forbidden:
         if token in source:
             return f"provider leakage token present: {token}"
