@@ -20,11 +20,6 @@ def _first_observation(record: dict[str, Any], action: str) -> dict[str, Any] | 
     return matches[0] if matches else None
 
 
-def _last_observation(record: dict[str, Any], action: str) -> dict[str, Any] | None:
-    matches = [event for event in _events(record, "observation") if event.get("action") == action]
-    return matches[-1] if matches else None
-
-
 def _source_bytes(scenario_id: int) -> bytes:
     return SCENARIOS[int(scenario_id)].encode("utf-8")
 
@@ -118,14 +113,19 @@ def _audit_pair(normal: dict[str, Any], perturbed: dict[str, Any], variant: str)
                 failures.append("unexplained first divergence")
             if divergence == 0 or normal_actions[divergence - 1] != "CHECK_ARTIFACT" or pert_actions[divergence] != "REPAIR_ARTIFACT":
                 failures.append("unexplained first divergence")
-            relevant = [
+            causal_decisions = [
                 d for d in _events(perturbed, "decision")
                 if d.get("observation", {}).get("action") == "CHECK_ARTIFACT"
             ]
-            if not relevant or relevant[0].get("observation", {}).get("tool_status") != "FAIL":
+            if not causal_decisions:
                 failures.append("repair without causal observation")
-            if not relevant or relevant[0].get("action") != "REPAIR_ARTIFACT":
-                failures.append("repair without causal observation")
+            else:
+                causal = causal_decisions[0]
+                embedded = causal.get("observation", {})
+                if embedded.get("tool_status") != pert_check.get("tool_status") or embedded.get("artifact_hash") != pert_check.get("artifact_hash"):
+                    failures.append("observation contradiction")
+                if embedded.get("tool_status") != "FAIL" or causal.get("action") != "REPAIR_ARTIFACT":
+                    failures.append("repair without causal observation")
         if perturbed.get("verification", {}).get("status") != "PASS" or _final_state_artifact_hash(perturbed) != expected_hash:
             failures.append("final oracle contradiction")
     else:
