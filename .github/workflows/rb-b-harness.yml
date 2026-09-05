@@ -2,7 +2,7 @@ name: RB-B harness
 
 on:
   push:
-    branches: [main, e2-autonomous-adversarial]
+    branches: [main, e2-autonomous-adversarial, q-llm-01-r-runtime-readiness]
   pull_request:
 
 jobs:
