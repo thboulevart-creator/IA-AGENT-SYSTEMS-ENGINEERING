@@ -2,7 +2,9 @@ name: Q-LLM-01 readiness
 
 on:
   push:
-    branches: [q-llm-01-execution-ready]
+    branches:
+      - q-llm-01-execution-ready
+      - q-llm-01-runtime-fingerprint
   pull_request:
     branches: [main]
 
