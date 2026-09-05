@@ -27,3 +27,14 @@ jobs:
               python -m experiments.rb_b.harness --experiment "$failure" --variant "$variant" --runs 1 --output /tmp/rb-b.jsonl
             done
           done
+      - name: Formal E1 dataset
+        run: python -m experiments.rb_b.harness --formal-e1 --output-dir /tmp/formal-e1
+      - name: Formal E1 trace audit
+        run: python -m experiments.rb_b.audit_formal_e1 /tmp/formal-e1
+      - name: Preserve formal E1 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rb-b-formal-e1
+          path: /tmp/formal-e1
+          if-no-files-found: error
+          retention-days: 30
