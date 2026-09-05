@@ -1,0 +1,20 @@
+name: Q-LLM-01 readiness
+
+on:
+  push:
+    branches: [q-llm-01-execution-ready]
+  pull_request:
+    branches: [main]
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Q-LLM-01 readiness tests
+        run: python -m unittest discover -s tests/q_llm_01 -p 'test_*.py' -v
+      - name: RB-B regression tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
