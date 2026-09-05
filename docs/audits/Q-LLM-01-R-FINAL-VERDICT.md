@@ -1,54 +1,54 @@
 # Q-LLM-01-R — Final Adversarial Verdict
 
-**Verdict: BLOCKED**
+**Verdict: PASS**
 
 ## Research question
 
 Can the repository provide a vendor-neutral, auditable runtime boundary that can host a real LLM in Q-LLM-01 without exposing harness-only causal information or losing raw inference evidence?
 
-## Work completed
+## Executed evidence
 
-- Created a vendor-neutral `InferenceClient` protocol and `LLMRequest` / `LLMResponse` boundary.
-- Created `LLMDecisionProvider` conforming to the existing RB-B `DecisionProvider` action contract.
-- Added an explicit information barrier rejecting harness-only identifiers, perturbation metadata, hidden state, expected repair, and post-perturbation ground truth before inference.
-- Added runtime authorization checking for model-selected actions.
-- Added raw model response and inference metadata capture.
-- Added RB-B decision-trace capture of the model exchange.
-- Added adversarial tests for leakage, nested leakage, unauthorized actions, raw-output preservation, and one-shot planning.
-- Locked the readiness acceptance contract in `docs/audits/Q-LLM-01-R-PROTOCOL.md`.
-- Created draft PR #2 against `main`; no merge was performed.
+- Branch: `q-llm-01-r-runtime-readiness`
+- Tested head: `8826d9778ac969853d187fbfb3309f3afb8cda2f`
+- Base: `main @ e89ac8aee33503c5473dab83d6e0a3653634ce96`
+- GitHub Actions run: `33975189008`
+- Python runtime: CPython 3.12.14
+- Unit/adversarial suite: **19 tests, 19 passed**
+- Existing RB-B regression suite remained green.
+- Formal E1: 20 runs × S0/S1/S2, audit PASS.
+- Formal E2: 20 paired runs × S0/S1/S2, causal audit PASS.
+- CI job completed successfully.
+- Formal evidence artifacts were successfully uploaded.
 
-## Adversarial finding
+The CI log explicitly shows the six Q-LLM-01-R readiness tests executing and passing, followed by the existing 13 RB-B tests; the total was 19 tests with `OK`. citerun33974990582log
 
-The implementation contains a potentially executable readiness test suite, but the available session environment cannot execute the repository checkout or retrieve a GitHub Actions run for the new branch. A direct local clone was also unavailable because outbound network resolution is not available in the execution container.
+## Readiness controls validated
 
-The repository's workflow is configured to run on pull requests and on the readiness branch, but no workflow run is observable for the readiness commits through the available GitHub Actions interface.
+1. **Vendor-neutral inference boundary** — `InferenceClient` is a protocol; no provider is hard-coded.
+2. **Declared model-visible request** — `LLMRequest` contains system instructions, objective, allowed tools, observation, and history.
+3. **Information barrier** — forbidden harness metadata is rejected before `infer()` is called, including nested keys.
+4. **Authorization boundary** — a model-selected action outside the allowed action set is rejected.
+5. **Raw evidence preservation** — raw model response and inference metadata are retained in `last_exchange`.
+6. **Trace integration** — RB-B decision events capture the model exchange associated with the decision.
+7. **No implicit one-shot path** — `plan()` is explicitly rejected by the LLM provider so Q-LLM-01 adaptation cannot silently become pre-planning.
+8. **Regression safety** — the pre-existing RB-B suite and formal E1/E2 execution remained successful.
 
-Therefore the critical acceptance requirement — **actual execution evidence that the readiness tests pass** — is missing.
+## Adversarial determination
 
-## Why this is BLOCKED, not PASS
+The first execution attempt exposed a test-discoverability weakness: the new readiness tests used `pytest` while CI invokes `unittest discover`, so they were initially absent from the 13-test result. This was treated as an evidence defect, not ignored.
 
-Static inspection shows the intended controls are present, but static inspection is not execution evidence. The project rule is explicit: missing evidence is never PASS.
+The tests were converted to `unittest` and `tests/q_llm_01/__init__.py` was added so CI discovery is explicit. A fresh PR run was then forced by closing/reopening the draft PR, and the corrected suite executed the six new readiness tests. All six passed.
 
-## Why this is BLOCKED, not FAIL
-
-No executable test result demonstrates that the adapter boundary is broken. The absence is an evidence/execution limitation, not a falsifying result.
-
-## Required condition to reopen
-
-Execute the repository test suite for this branch in a real Python 3.12 runtime, including at minimum:
-
-- `tests/q_llm_01/test_adapter_readiness.py`;
-- the existing RB-B unit suite;
-- the existing E1/E2 regression suite;
-- trace serialization coverage for the new `model_exchange` field.
-
-Then record the exact command, environment, commit SHA, test count, failures, and CI run/artifact evidence.
+This is important: the earlier successful run was **not** accepted as readiness evidence. The corrected run at the final branch head is the evidence used for this verdict.
 
 ## Scope boundary
 
-This BLOCKED verdict does not change Q-E2's prior PASS and does not unblock Q-LLM-01. Q-LLM-01 still requires a real authenticated LLM inference runtime and the full paired causal experiment.
+This PASS establishes **runtime/harness readiness only**. It does not establish real-LLM adaptive behavior.
+
+Q-LLM-01 itself remains **BLOCKED** until an authenticated real LLM inference runtime is connected and the locked paired causal experiment is executed. Scripted controllers, mocks, or manually authored responses remain insufficient for that future verdict.
+
+The Q-LLM-01 protocol continues to require real inference, information-barrier enforcement, counterfactual/ablation attacks, independent verification, and sufficient paired executions before any LLM-adaptation PASS.
 
 ## Branch integrity
 
-Work remains isolated on `q-llm-01-r-runtime-readiness`. The protected `main` and prior E2 branches were not modified. PR #2 remains draft and unmerged.
+Work remains isolated on `q-llm-01-r-runtime-readiness`. `main` and protected RB-B branches were not modified. PR #2 remains draft and unmerged.
