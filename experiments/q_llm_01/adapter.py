@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
+from experiments.rb_b.systems import Decision
 
-# Fields that are explicitly forbidden from crossing the model information barrier.
+
 FORBIDDEN_INPUT_KEYS = frozenset(
     {
         "experiment_id",
@@ -57,6 +58,7 @@ class LLMDecisionProvider:
         self._client = client
         self._system_instructions = system_instructions
         self._allowed_actions = allowed_actions
+        self.last_exchange: dict[str, Any] | None = None
 
     def plan(self, objective: str, tools: tuple[str, ...]) -> list[str]:
         raise RuntimeError("LLMDecisionProvider does not support one-shot planning; use S2 decide().")
@@ -66,7 +68,7 @@ class LLMDecisionProvider:
         objective: str,
         observation: dict[str, Any],
         history: list[dict[str, Any]],
-    ) -> dict[str, Any]:
+    ) -> Decision:
         request = LLMRequest(
             system_instructions=self._system_instructions,
             objective=objective,
@@ -78,17 +80,16 @@ class LLMDecisionProvider:
         response = self._client.infer(request)
         if response.action is not None and response.action not in self._allowed_actions:
             raise ValueError(f"model proposed unauthorized action: {response.action}")
-        return {
-            "action": response.action,
+        self.last_exchange = {
+            "model_input": request,
             "raw_response": response.raw,
             "inference_metadata": dict(response.metadata),
-            "model_input": {
-                "objective": request.objective,
-                "tools": request.tools,
-                "observation": dict(request.observation),
-                "history": [dict(item) for item in request.history],
-            },
         }
+        return Decision(
+            response.action,
+            "llm_decision",
+            "model-selected action from declared observation",
+        )
 
 
 def _assert_information_barrier(request: LLMRequest) -> None:
