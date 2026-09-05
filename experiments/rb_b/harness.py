@@ -6,7 +6,8 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from .oracle import OBJECTIVE_VERSION, verify_o1
+from .observer import snapshot_workspace
+from .oracle import OBJECTIVE_VERSION
 from .runner import Runner
 from .systems import ScriptedDecisionProvider
 from .tools import FaultPlan, WorkspaceTools
@@ -21,16 +22,16 @@ SCENARIOS = {
 }
 
 
-def corrupt_after_write(action: str, workspace: Path, trace: Trace) -> None:
+def corrupt_after_write(action: str, workspace: Path) -> dict:
     if action != "WRITE_ARTIFACT":
-        return
+        return {}
     artifact = workspace / "artifact.txt"
     data = artifact.read_bytes() if artifact.exists() else b"x"
     if data:
         artifact.write_bytes(data[:-1] + (b"X" if data[-1:] != b"X" else b"Y"))
     else:
         artifact.write_bytes(b"X")
-    trace.event("external_mutation", target="artifact.txt", mutation="deterministic_corruption")
+    return {"target": "artifact.txt", "mutation": "deterministic_corruption"}
 
 
 def make_fault(experiment: str) -> FaultPlan:
