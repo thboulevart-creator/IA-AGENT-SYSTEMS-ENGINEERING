@@ -83,12 +83,14 @@ class Runner:
         observation = {"action": None, "tool_status": None, "external_state": {}}
         for _ in range(max_actions):
             decision = self.provider.decide(OBJECTIVE, observation, history)
+            audit_record = getattr(self.provider, "last_exchange", None)
             trace.event(
                 "decision",
                 action=decision.action,
                 intent=decision.intent,
                 reason=decision.reason,
                 observation=_json_safe(observation),
+                model_exchange=_json_safe(audit_record) if audit_record is not None else None,
             )
             if decision.action is None:
                 return trace.finish(workspace, "adaptive_termination")

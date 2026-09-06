@@ -2,7 +2,7 @@ name: RB-B harness
 
 on:
   push:
-    branches: [main]
+    branches: [main, e2-autonomous-adversarial, q-llm-01-r-runtime-readiness]
   pull_request:
 
 jobs:
@@ -32,10 +32,21 @@ jobs:
         run: python -m experiments.rb_b.harness --formal-e1 --output-dir /tmp/formal-e1
       - name: Formal E1 trace audit
         run: python -m experiments.rb_b.audit_formal_e1 /tmp/formal-e1
+      - name: Formal E2 paired dataset
+        run: python -m experiments.rb_b.harness --formal-e2 --e2-output-dir /tmp/formal-e2
+      - name: Formal E2 causal audit
+        run: python -m experiments.rb_b.audit_formal_e2 /tmp/formal-e2
       - name: Preserve formal E1 evidence
         uses: actions/upload-artifact@v4
         with:
           name: rb-b-formal-e1
           path: /tmp/formal-e1
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve formal E2 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rb-b-formal-e2
+          path: /tmp/formal-e2
           if-no-files-found: error
           retention-days: 30
