@@ -1,6 +1,6 @@
 # ARCHITECTURAL-GOVERNANCE-RULES
 
-**Version:** V0.1  
+**Version:** V0.2  
 **Status:** ACTIVE / GOVERNANCE  
 **Scope:** Permanent methodological rules for architectural and experimental work
 
@@ -106,6 +106,12 @@ A passing test harness is not automatically trustworthy. The harness must be rev
 
 If a critical invariant concerns rejection of malformed, incomplete, corrupted, ambiguous, or otherwise invalid input, controlled failure injection should be used to demonstrate that the invalid state is actually rejected and cannot be silently promoted.
 
+### GOV-ORACLE-004 — Independent oracle/reference for critical qualification claims
+
+For critical correctness claims, the qualification harness should, where practical, derive expected outcomes from an independent oracle or reference representation rather than reproducing the implementation's own logic.
+
+If independent validation is impossible, the limitation must be explicit and the claim must not be presented as stronger than the available evidence permits.
+
 ## 5. Status and progression discipline
 
 ### GOV-STATUS-001 — Evidence status follows evidence, not intention
@@ -121,6 +127,12 @@ A test that cannot execute because of missing prerequisites, unavailable infrast
 For high-cost or high-consequence real acquisitions, the project should first establish the relevant safety properties using controlled fixtures, failure injection, recovery tests, and deterministic checks before committing to the full real-data gate.
 
 This does not eliminate the need for real-data validation; it reduces the risk of discovering basic architectural failures during the expensive run.
+
+### GOV-STATUS-004 — Historical success is not current qualification evidence
+
+A historical green test, prior successful run, or previously observed correct behavior does not constitute current qualification evidence when the relevant code, environment, dependencies, harness, or acceptance conditions have changed or cannot be reproduced in the current environment.
+
+Current qualification requires executable, attributable evidence for the current baseline.
 
 ## 6. Automatic rule-promotion policy
 
@@ -155,13 +167,15 @@ Important architectural rules are not considered durably adopted merely because 
 
 ## 7. Current permanent rules promoted from V3.3 qualification work
 
-The following rules were promoted after the V3.3 downloader qualification work exposed a methodological failure mode: interpreting a PowerShell error as confirmation of a previously suspected defect rather than first treating the error as an observation requiring interpretation.
+The following rules were promoted after the V3.3 downloader qualification work exposed methodological failure modes: interpreting a PowerShell error as confirmation of a previously suspected defect rather than first treating the error as an observation requiring interpretation; and recognizing that runtime qualification requires executable evidence and an independently trustworthy validation oracle.
 
 - GOV-EVID-001 — Observation is not interpretation.
 - GOV-EVID-002 — Correction is not validation.
 - GOV-ORACLE-001 — Avoid common-mode validation failure.
 - GOV-ORACLE-002 — Test harnesses are themselves auditable.
 - GOV-ORACLE-003 — Failure injection is required for critical rejection properties.
+- GOV-ORACLE-004 — Independent oracle/reference for critical qualification claims.
+- GOV-STATUS-004 — Historical success is not current qualification evidence.
 - GOV-META-001 through GOV-META-004 — Material methodological discoveries must be durably promoted to the appropriate repository scope.
 
 ## 8. Change control
