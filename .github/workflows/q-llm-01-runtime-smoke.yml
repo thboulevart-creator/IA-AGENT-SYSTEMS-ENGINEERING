@@ -1,0 +1,21 @@
+name: Q-LLM-01 real runtime smoke
+
+on:
+  push:
+    branches: [q-llm-01-runtime-smoke]
+  workflow_dispatch:
+
+jobs:
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Real OpenAI inference smoke test
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          Q_LLM_MODEL: gpt-5.6-luna
+        run: python experiments/q_llm_01/openai_runtime_smoke.py
